@@ -1,0 +1,48 @@
+name: Azure Container Registry Build by MDPOps
+branding:
+  icon: truck
+  color: red
+author: Clark159
+description: GitHub Action for building Azure Container Registry
+
+inputs:
+  resourceGroupName:
+    description: Resource Group Name
+    required: true
+
+  registryServerName:
+    description: Registry Server Name
+    required: true
+
+  dockerImageName:
+    description: Docker Image Name
+    required: true
+
+  dockerFilePath:
+    description: Docker File Path
+    required: true
+    
+runs:
+  using: composite
+  steps:
+
+  - name: Configure Environment Variables
+    uses: azure/CLI@v1
+    with:
+      inlineScript: |
+         echo 'RESOURCE_GROUP_NAME=${{ inputs.resourceGroupName }}' >> $GITHUB_ENV
+         echo 'REGISTRY_SERVER_NAME=${{ inputs.registryServerName }}' >> $GITHUB_ENV
+         echo 'DOCKER_IMAGE_NAME=${{ inputs.dockerImageName }}' >> $GITHUB_ENV
+         echo 'DOCKER_FILE_PATH=${{ inputs.dockerFilePath }}' >> $GITHUB_ENV
+
+  - name: Checkout GitHub Repository
+    uses: actions/checkout@v4
+
+  - name: Deploy Azure Container Registry
+    uses: azure/CLI@v1
+    with:
+      inlineScript: |
+         az acr build \
+           --registry ${{ env.REGISTRY_SERVER_NAME }} \
+           --file ${{ env.DOCKER_FILE_PATH }} \
+           --image ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} .          
