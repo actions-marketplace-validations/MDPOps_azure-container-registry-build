@@ -25,21 +25,12 @@ inputs:
 runs:
   using: composite
   steps:
-
-  - name: Configure Environment Variables
-    uses: azure/CLI@v1
-    with:
-      inlineScript: |
-         echo 'RESOURCE_GROUP_NAME=${{ inputs.resourceGroupName }}' >> $GITHUB_ENV
-         echo 'REGISTRY_SERVER_NAME=${{ inputs.registryServerName }}' >> $GITHUB_ENV
-         echo 'DOCKER_IMAGE_NAME=${{ inputs.dockerImageName }}' >> $GITHUB_ENV
-         echo 'DOCKER_FILE_PATH=${{ inputs.dockerFilePath }}' >> $GITHUB_ENV
-
+  
   - name: Configure Azure CLI
     uses: azure/CLI@v1
     with:
       inlineScript: |
-        az configure --defaults location=$(az group show --name ${{ env.RESOURCE_GROUP_NAME }} --query location -o tsv)
+        az configure --defaults location=$(az group show --name ${{ env.resourceGroupName }} --query location -o tsv)
 
   - name: Checkout GitHub Repository
     uses: actions/checkout@v4
@@ -49,6 +40,6 @@ runs:
     with:
       inlineScript: |
          az acr build \
-           --registry ${{ env.REGISTRY_SERVER_NAME }} \
-           --file ${{ env.DOCKER_FILE_PATH }} \
-           --image ${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }} .          
+           --registry ${{ env.registryServerName }} \
+           --file ${{ env.dockerFilePath }} \
+           --image ${{ env.dockerImageName }}:${{ github.sha }} .          
