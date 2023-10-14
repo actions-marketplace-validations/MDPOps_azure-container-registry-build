@@ -3,7 +3,7 @@ branding:
   icon: truck
   color: red
 author: Clark159
-description: GitHub Action for building Azure Container Registry
+description: GitHub Action for Building Azure Container Registry
 
 inputs:
   resourceGroupName:
