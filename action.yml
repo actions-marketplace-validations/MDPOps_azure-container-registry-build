@@ -30,7 +30,7 @@ runs:
     uses: azure/CLI@v1
     with:
       inlineScript: |
-        az configure --defaults location=$(az group show --name ${{ env.resourceGroupName }} --query location -o tsv)
+        az configure --defaults location=$(az group show --name ${{ inputs.resourceGroupName }} --query location -o tsv)
 
   - name: Checkout GitHub Repository
     uses: actions/checkout@v4
@@ -40,6 +40,6 @@ runs:
     with:
       inlineScript: |
          az acr build \
-           --registry ${{ env.registryServerName }} \
-           --file ${{ env.dockerFilePath }} \
-           --image ${{ env.dockerImageName }}:${{ github.sha }} .          
+           --registry ${{ inputs.registryServerName }} \
+           --file ${{ inputs.dockerFilePath }} \
+           --image ${{ inputs.dockerImageName }}:${{ github.sha }} .          
