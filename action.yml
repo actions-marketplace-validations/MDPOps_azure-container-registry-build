@@ -7,7 +7,7 @@ description: GitHub Action for Building Azure Container Registry
 
 inputs:
   resourceGroupName:
-    description: 'Resource Group Name'
+    description: Resource Group Name
     required: true
     
   registryServerName:
