@@ -1,2 +1,2 @@
 # azure-container-registry-build
-Azure Container Registry Build by MDPOps
+Azure Container Registry Build by MDP
