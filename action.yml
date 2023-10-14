@@ -6,10 +6,6 @@ author: Clark159
 description: GitHub Action for building Azure Container Registry
 
 inputs:
-  resourceGroupName:
-    description: Resource Group Name
-    required: true
-
   registryServerName:
     description: Registry Server Name
     required: true
@@ -30,7 +26,6 @@ runs:
     uses: azure/CLI@v1
     with:
       inlineScript: |
-         echo 'RESOURCE_GROUP_NAME=${{ inputs.resourceGroupName }}' >> $GITHUB_ENV
          echo 'REGISTRY_SERVER_NAME=${{ inputs.registryServerName }}' >> $GITHUB_ENV
          echo 'DOCKER_IMAGE_NAME=${{ inputs.dockerImageName }}' >> $GITHUB_ENV
          echo 'DOCKER_FILE_PATH=${{ inputs.dockerFilePath }}' >> $GITHUB_ENV
