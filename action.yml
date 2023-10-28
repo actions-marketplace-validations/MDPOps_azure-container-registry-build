@@ -27,14 +27,6 @@ inputs:
 runs:
   using: composite
   steps:
-    
-    - name: Print working directory
-      shell: bash
-      run: pwd
-      
-    - name: Print files and directories in current path
-      shell: bash
-      run: ls -al
       
     - name: Check DeployType by MDP              
       uses: MDPOps/deploy-type-check@v1
@@ -46,7 +38,7 @@ runs:
     - name: Deploy ContainerRegistry
       uses: azure/arm-deploy@v1
       with:
-        deploymentName: ${{ github.workflow }}-${{ github.run_number }}
+        deploymentName: ${{ github.workflow }}(${{ github.action }})-${{ github.run_number }}
         resourceGroupName: ${{ inputs.resourceGroupName }}
         template: ${{ github.action_path }}/main.bicep
         failOnStdErr: false
