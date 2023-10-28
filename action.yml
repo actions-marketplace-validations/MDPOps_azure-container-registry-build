@@ -28,6 +28,12 @@ runs:
   using: composite
   steps:
     
+    - name: Print working directory
+      run: pwd
+      
+    - name: Print files and directories in current path
+      run: ls -al
+      
     - name: Check DeployType by MDP              
       uses: MDPOps/deploy-type-check@v1
       with:
