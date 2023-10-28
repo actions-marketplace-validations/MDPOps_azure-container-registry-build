@@ -38,7 +38,7 @@ runs:
     - name: Deploy ContainerRegistry
       uses: azure/arm-deploy@v1
       with:
-        deploymentName: ${{ github.workflow }}(${{ github.action }})-${{ github.run_number }}
+        deploymentName: ${{ github.workflow }}-(${{ github.action }})-${{ github.run_number }}
         resourceGroupName: ${{ inputs.resourceGroupName }}
         template: ${{ github.action_path }}/main.bicep
         failOnStdErr: false
