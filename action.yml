@@ -1,45 +1,75 @@
-name: Azure Container Registry Build by MDP
+name: Deploy AzureContainerRegistry by MDP
 branding:
   icon: truck
   color: red
 author: Clark159
-description: GitHub Action for Building Azure Container Registry
+description: GitHub Action for Deploy AzureContainerRegistry
+
 
 inputs:
   resourceGroupName:
-    description: Resource Group Name
-    required: true
-    
-  registryServerName:
-    description: Registry Server Name
+    description: ResourceGroup Name
     required: true
 
-  dockerImageName:
-    description: Docker Image Name
+  containerAppName:
+    description: ContainerApp Name
     required: true
 
   dockerFilePath:
-    description: Docker File Path
+    description: DockerFile Path
     required: true
-    
+  
+  deployHostPaths:
+    description: DeployHost Paths
+    required: false
+
+
 runs:
   using: composite
   steps:
-  
-  - name: Configure Azure CLI
-    uses: azure/CLI@v1
-    with:
-      inlineScript: |
-        az configure --defaults location=$(az group show --name ${{ inputs.resourceGroupName }} --query location -o tsv)
+    
+    - name: Check DeployType by MDP              
+      uses: MDPOps/deploy-type-check@v1
+      with:
+        deployHostPaths: 
+          ${{ inputs.deployHostPaths }}
+      id: deploy-type-check
 
-  - name: Checkout GitHub Repository
-    uses: actions/checkout@v4
+    - name: Deploy ContainerRegistry
+      uses: azure/arm-deploy@v1
+      with:
+        deploymentName: ${{ github.workflow }}-${{ github.run_number }}
+        resourceGroupName: ${{ inputs.resourceGroupName }}
+        template: ./azure-container-registry-deploy/main.bicep
+        failOnStdErr: false
+      id: arm-deploy
 
-  - name: Deploy Azure Container Registry
-    uses: azure/CLI@v1
-    with:
-      inlineScript: |
-         az acr build \
-           --registry ${{ inputs.registryServerName }} \
+    - name: Deploy DockerImage
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+           az acr build \
+           --registry ${{ steps.arm-deploy.outputs.containerRegistryName }} \
            --file ${{ inputs.dockerFilePath }} \
-           --image ${{ inputs.dockerImageName }}:${{ github.sha }} .          
+           --image ${{ inputs.containerAppName }}:${{ github.sha }} .
+
+    - name: Display Outputs
+      shell: bash
+      run: |
+        echo deployType=${{ steps.deploy-type-check.outputs.deployType }}
+        echo containerRegistryName=${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io
+        echo containerImageName=${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppName }}:${{ github.sha }}
+
+
+outputs:
+  deployType:
+    description: DeployType=[hosts/apps]
+    value: ${{ steps.deploy-type-check.outputs.deployType }}
+
+  containerRegistryName:
+    description: ContainerRegistry Name
+    value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io
+
+  containerImageName:
+    description: containerImage Name
+    value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppName }}:${{ github.sha }}
