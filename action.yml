@@ -48,7 +48,7 @@ runs:
       with:
         deploymentName: ${{ github.workflow }}-${{ github.run_number }}
         resourceGroupName: ${{ inputs.resourceGroupName }}
-        template: main.bicep
+        template: ${{ github.action_path }}/main.bicep
         failOnStdErr: false
       id: arm-deploy
 
