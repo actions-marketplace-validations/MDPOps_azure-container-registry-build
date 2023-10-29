@@ -71,5 +71,5 @@ outputs:
     value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io
 
   containerImageName:
-    description: containerImage Name
+    description: ContainerImage Name
     value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppName }}:${{ github.sha }}
