@@ -1,23 +1,20 @@
 // Inputs
 @description('ContainerRegistry Name')
-param containerRegistryName string = toLower('ACR${uniqueString(resourceGroup().id)}')
+param containerRegistryName string = ''
 
-@description('location')
-param location string =  resourceGroup().location
+@description('Location')
+param location string = resourceGroup().location
 
 
 // ContainerRegistry
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-12-01' = {
-  name: containerRegistryName
-  location: location
-  sku: {
-    name: 'Basic'
-  }
-  properties: {
-    adminUserEnabled: true
+module containerRegistry 'modules/containerRegistry.bicep' =  {
+  name: 'containerRegistry'
+  params: {
+    containerRegistryName: containerRegistryName
+    location: location
   }
 }
 
 
 // Outputs
-output containerRegistryName string = containerRegistry.name
+output containerRegistryName string = containerRegistry.outputs.name

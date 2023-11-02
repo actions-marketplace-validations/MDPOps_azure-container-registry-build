@@ -6,34 +6,27 @@ author: Clark159
 description: GitHub Action for Deploy AzureContainerRegistry
 
 
-inputs:
+inputs:     
   resourceGroupName:
     description: ResourceGroup Name
     required: true
 
-  containerAppName:
-    description: ContainerApp Name
+  containerAppsName:
+    description: ContainerApps Name
     required: true
 
   dockerFilePath:
     description: DockerFile Path
     required: true
-  
-  deployHostPaths:
-    description: DeployHost Paths
+
+  containerRegistryName: 
+    description: ContainerRegistry Name
     required: false
 
 
 runs:
   using: composite
   steps:
-      
-    - name: Check DeployType by MDP              
-      uses: MDPOps/deploy-type-check@v1
-      with:
-        deployHostPaths: 
-          ${{ inputs.deployHostPaths }}
-      id: deploy-type-check
 
     - name: Deploy ContainerRegistry
       uses: azure/arm-deploy@v1
@@ -41,35 +34,32 @@ runs:
         deploymentName: ${{ github.workflow }}-(${{ github.action }})-${{ github.run_number }}
         resourceGroupName: ${{ inputs.resourceGroupName }}
         template: ${{ github.action_path }}/main.bicep
+        parameters: >-
+           containerRegistryName=${{ inputs.containerRegistryName }}
         failOnStdErr: false
       id: arm-deploy
 
-    - name: Deploy DockerImage
+    - name: Deploy ContainerImage
       uses: azure/CLI@v1
       with:
         inlineScript: |
            az acr build \
            --registry ${{ steps.arm-deploy.outputs.containerRegistryName }} \
            --file ${{ inputs.dockerFilePath }} \
-           --image ${{ inputs.containerAppName }}:${{ github.sha }} .
+           --image ${{ inputs.containerAppsName }}:${{ github.sha }} .
 
     - name: Display Outputs
       shell: bash
       run: |
-        echo deployType=${{ steps.deploy-type-check.outputs.deployType }}
         echo containerRegistryName=${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io
-        echo containerImageName=${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppName }}:${{ github.sha }}
+        echo containerImageName=${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppsName }}:${{ github.sha }}
 
 
 outputs:
-  deployType:
-    description: DeployType=[hosts/apps]
-    value: ${{ steps.deploy-type-check.outputs.deployType }}
-
   containerRegistryName:
     description: ContainerRegistry Name
     value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io
 
   containerImageName:
     description: ContainerImage Name
-    value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppName }}:${{ github.sha }}
+    value: ${{ steps.arm-deploy.outputs.containerRegistryName }}.azurecr.io/${{ inputs.containerAppsName }}:${{ github.sha }}
