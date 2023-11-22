@@ -2,27 +2,35 @@
 @description('ContainerRegistry Name')
 param containerRegistryName string = ''
 
-@description('Location')
+
+// Variables
+@description('sku=[Basic], [Standard], [Premium]')
+@allowed(['Basic', 'Standard', 'Premium', ''])
+param sku string = ''
+
+var skuName = {
+  Basic: 'Basic'
+  Standard: 'Standard'
+  Premium: 'Premium'
+}
+
+@description('location')
 param location string = resourceGroup().location
 
 
 // ContainerRegistry
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-12-01' = if (empty(containerRegistryName)) {
-  name: toLower('arc${uniqueString(resourceGroup().id)}')
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-12-01' = {
+  name: !empty(containerRegistryName) ? containerRegistryName : toLower('arc${uniqueString(resourceGroup().id)}')
   location: location
   sku: {
-    name: 'Basic'
-  }
+    name: !empty(sku) ? skuName[sku] : skuName.Basic
+  } 
   properties: {
     adminUserEnabled: true
-  }
-}
-
-resource containerRegistryReference 'Microsoft.ContainerRegistry/registries@2022-12-01' existing = if (!empty(containerRegistryName)) {
-  name: containerRegistryName
+  } 
 }
 
 
 // Outputs
-output id string = empty(containerRegistryName) ? containerRegistry.id : containerRegistryReference.id
-output name string = empty(containerRegistryName) ? containerRegistry.name : containerRegistryReference.name
+output id string = containerRegistry.id
+output name string = containerRegistry.name
