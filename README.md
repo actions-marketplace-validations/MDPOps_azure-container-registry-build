@@ -1,3 +1,4 @@
-# Azure Container Registry Build by MDP
+# Deploy AzureContainerRegistry by MDP
 
-GitHub Action for Building Azure Container Registry
+GitHub Action for Deploy AzureContainerRegistry
+

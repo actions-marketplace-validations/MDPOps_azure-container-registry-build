@@ -1,45 +1,89 @@
-name: Azure Container Registry Build by MDP
+name: Deploy AzureContainerRegistry by MDP
 branding:
   icon: truck
   color: red
 author: Clark159
-description: GitHub Action for Building Azure Container Registry
+description: GitHub Action for Deploy AzureContainerRegistry
 
-inputs:
+
+inputs:     
   resourceGroupName:
-    description: Resource Group Name
-    required: true
-    
-  registryServerName:
-    description: Registry Server Name
+    description: ResourceGroup Name
+    required: true    
+
+  containerRegistryName: 
+    description: ContainerRegistry Name
+    required: false
+
+  containerRegistrySku: 
+    description: ContainerRegistry Sku
+    required: false
+
+  dockerFilePath:
+    description: DockerFile Path
     required: true
 
   dockerImageName:
-    description: Docker Image Name
-    required: true
-
-  dockerFilePath:
-    description: Docker File Path
+    description: DockerImage Name
     required: true
     
+
 runs:
   using: composite
   steps:
-  
-  - name: Configure Azure CLI
-    uses: azure/CLI@v1
-    with:
-      inlineScript: |
-        az configure --defaults location=$(az group show --name ${{ inputs.resourceGroupName }} --query location -o tsv)
 
-  - name: Checkout GitHub Repository
-    uses: actions/checkout@v4
+    - name: Deploy ContainerRegistry
+      uses: azure/arm-deploy@v1
+      with:
+        deploymentName: ${{ github.workflow }}-(azure-container-registry-deploy)-${{ github.run_number }}
+        resourceGroupName: ${{ inputs.resourceGroupName }}
+        template: ${{ github.action_path }}/modules/containerRegistry.bicep
+        parameters: >-
+          containerRegistryName=${{ inputs.containerRegistryName }}
+          sku=${{ inputs.containerRegistrySku }}
+        failOnStdErr: false
+      id: container-registry-deploy
 
-  - name: Deploy Azure Container Registry
-    uses: azure/CLI@v1
-    with:
-      inlineScript: |
-         az acr build \
-           --registry ${{ inputs.registryServerName }} \
-           --file ${{ inputs.dockerFilePath }} \
-           --image ${{ inputs.dockerImageName }}:${{ github.sha }} .          
+    - name: Retrieve ContainerRegistry
+      shell: bash
+      run: |-
+        registryCredentials=$(az acr credential show --name ${{ steps.container-registry-deploy.outputs.name }} --query "{username:username, password:passwords[0].value}" --output json)
+        echo "::add-mask::$(echo $registryCredentials | jq -r '.password')"
+        echo "username=$(echo $registryCredentials | jq -r '.username')" >> $GITHUB_OUTPUT
+        echo "password=$(echo $registryCredentials | jq -r '.password')" >> $GITHUB_OUTPUT
+      id: container-registry-retrieve
+
+    - name: Deploy DockerImage
+      uses: azure/CLI@v1
+      with:
+        inlineScript: >-
+          az acr build 
+          --registry ${{ steps.container-registry-deploy.outputs.name }} 
+          --file ${{ inputs.dockerFilePath }} 
+          --image ${{ inputs.dockerImageName }}:${{ github.sha }} .
+
+    - name: Display Outputs
+      shell: bash
+      run: |-
+        echo containerRegistryName=${{ steps.container-registry-deploy.outputs.name }}
+        echo containerRegistryImage=${{ steps.container-registry-deploy.outputs.name }}.azurecr.io/${{ inputs.dockerImageName }}:${{ github.sha }}
+
+
+outputs:
+  containerRegistryName:
+    description: ContainerRegistry Name
+    value: ${{ steps.container-registry-deploy.outputs.name }}
+
+  containerRegistryImage:
+    description: ContainerRegistry Image
+    value: ${{ steps.container-registry-deploy.outputs.name }}.azurecr.io/${{ inputs.dockerImageName }}:${{ github.sha }}
+
+  containerRegistryCredentials:
+    description: ContainerRegistry Credentials
+    value: >-
+      {        
+      "name": "${{ steps.container-registry-deploy.outputs.name }}",
+      "username": "${{ steps.container-registry-retrieve.outputs.username }}",
+      "password": "${{ steps.container-registry-retrieve.outputs.password }}", 
+      "image": "${{ steps.container-registry-deploy.outputs.name }}.azurecr.io/${{ inputs.dockerImageName }}:${{ github.sha }}"       
+      }
